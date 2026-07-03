@@ -157,11 +157,11 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
   const alivePlayers = allPlayers.filter(p => p.is_alive);
 
   return (
-    <main className="flex-1 flex flex-col p-6 max-w-5xl mx-auto w-full relative">
+    <main className="flex-1 flex flex-col p-4 md:p-6 pb-24 max-w-5xl mx-auto w-full relative">
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* Header */}
-      <header className="flex justify-between items-center mb-10 pb-6 border-b border-white/10">
+      <header className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 gap-2">
         <div>
           <h1 className="text-2xl font-serif text-white tracking-wide flex items-center gap-3">
             {room?.phase === 'night' ? (

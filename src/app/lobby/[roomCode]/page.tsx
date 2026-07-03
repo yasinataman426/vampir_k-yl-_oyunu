@@ -158,11 +158,11 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
   const isHost = currentPlayer?.is_host ?? false;
 
   return (
-    <main className="flex-1 flex flex-col p-6 max-w-5xl mx-auto w-full relative">
+    <main className="flex-1 flex flex-col p-4 md:p-6 max-w-5xl mx-auto w-full relative h-[100dvh] overflow-hidden">
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* Header */}
-      <header className="flex flex-col sm:flex-row justify-between items-center mb-10 pb-6 border-b border-white/10 gap-4">
+      <header className="flex flex-col sm:flex-row justify-between items-center mb-4 pb-4 border-b border-white/10 gap-4 shrink-0">
         <div>
           <h1 className="text-3xl font-serif text-white tracking-wide">Oda Lobisi</h1>
           <p className="text-gray-400 mt-1">Oyunun başlaması bekleniyor...</p>
@@ -174,11 +174,11 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
         </div>
       </header>
 
-      <div className="flex flex-col lg:flex-row gap-8 flex-1">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
         
         {/* Left Col: Players */}
-        <div className="flex-1">
-          <div className="flex justify-between items-end mb-6">
+        <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex justify-between items-end mb-4 shrink-0">
             <h2 className="text-xl font-medium text-white flex items-center gap-2">
               Katılan Oyuncular 
               <span className="bg-primary/20 text-primary-200 text-sm py-1 px-3 rounded-full border border-primary/30">
@@ -187,7 +187,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 pb-2 custom-scrollbar">
             {players.map((player) => (
               <div key={player.id} className="glass-panel p-4 rounded-xl flex items-center gap-4 animate-in fade-in zoom-in-95 duration-500">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
@@ -210,7 +210,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
 
         {/* Right Col: Host Settings */}
         {isHost && (
-          <div className="lg:w-96 shrink-0 flex flex-col gap-6">
+          <div className="lg:w-96 shrink-0 flex flex-col gap-4 overflow-y-auto pb-2 custom-scrollbar">
             <RoleSettingsPanel 
               playerCount={players.length} 
               roleCounts={roleCounts} 
@@ -222,7 +222,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
       </div>
 
       {/* Footer Actions */}
-      <footer className="mt-12 pt-6 border-t border-white/10 flex justify-center">
+      <footer className="mt-4 pt-4 border-t border-white/10 flex justify-center shrink-0">
         {isHost ? (
           <div className="flex flex-col items-center gap-2">
             <Button 
