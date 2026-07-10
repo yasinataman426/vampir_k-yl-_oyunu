@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { supabase } from '@/lib/supabase';
+import { AVATARS } from '@/lib/constants';
 
 interface JoinRoomModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose })
   const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [roomCode, setRoomCode] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('aslan');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,6 +51,7 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose })
         .insert({
           room_id: roomData.id,
           nickname: nickname.trim(),
+          avatar_id: selectedAvatar,
           is_host: false,
           is_alive: true
         })
@@ -107,6 +110,31 @@ export const JoinRoomModal: React.FC<JoinRoomModalProps> = ({ isOpen, onClose })
             minLength={6}
             disabled={isLoading}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Figürünüzü Seçin
+          </label>
+          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+            {AVATARS.map((avatar) => (
+              <button
+                key={avatar.id}
+                type="button"
+                onClick={() => setSelectedAvatar(avatar.id)}
+                className={`shrink-0 w-12 h-12 rounded-full border-2 transition-all p-0.5 ${
+                  selectedAvatar === avatar.id
+                    ? 'border-secondary scale-110 shadow-[0_0_10px_rgba(212,175,55,0.5)] bg-secondary/20'
+                    : 'border-transparent hover:border-white/30 hover:bg-white/10'
+                }`}
+                title={avatar.name}
+              >
+                <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-2xl">
+                  {avatar.emoji}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
 
         {error && <p className="text-red-400 text-sm text-center">{error}</p>}

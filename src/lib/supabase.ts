@@ -9,6 +9,7 @@ export type Player = {
   id: string;
   room_id: string;
   nickname: string;
+  avatar_id: string;
   role: string | null;
   is_alive: boolean;
   is_host: boolean;

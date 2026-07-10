@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { supabase } from '@/lib/supabase';
+import { AVATARS } from '@/lib/constants';
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
   const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [discussionTime, setDiscussionTime] = useState('2');
+  const [selectedAvatar, setSelectedAvatar] = useState('aslan');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -57,6 +59,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
         .insert({
           room_id: roomData.id,
           nickname: nickname.trim(),
+          avatar_id: selectedAvatar,
           is_host: true,
           is_alive: true
         })
@@ -97,6 +100,31 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
             maxLength={20}
             disabled={isLoading}
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Figürünüzü Seçin
+          </label>
+          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+            {AVATARS.map((avatar) => (
+              <button
+                key={avatar.id}
+                type="button"
+                onClick={() => setSelectedAvatar(avatar.id)}
+                className={`shrink-0 w-12 h-12 rounded-full border-2 transition-all p-0.5 ${
+                  selectedAvatar === avatar.id
+                    ? 'border-primary scale-110 shadow-[0_0_10px_rgba(139,0,0,0.5)] bg-primary/20'
+                    : 'border-transparent hover:border-white/30 hover:bg-white/10'
+                }`}
+                title={avatar.name}
+              >
+                <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-2xl">
+                  {avatar.emoji}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
         
         <div>

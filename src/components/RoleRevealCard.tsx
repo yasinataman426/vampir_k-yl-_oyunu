@@ -16,9 +16,9 @@ const getRoleDescription = (role: string) => {
   switch (role) {
     case 'Vampir': return 'Geceleri avlan, gündüzleri masum rolü yap. Kasabayı ele geçir.';
     case 'Doktor': return 'Geceleri bir kişiyi iyileştirme gücüne sahipsin. Vampirlerin hedefini tahmin et.';
-    case 'Avcı': return 'Ölürken yanında birini de götürme hakkın var. Hedefini iyi seç.';
+    case 'Avcı': return 'Geceleri bir kişinin vampir olup olmadığını öğrenebilirsin. Kahin yeteneklerine sahipsin.';
     case 'Soytarı': return 'Amacın gündüzleri kendini astırmak. Eğer asılırsan, oyunu sen kazanırsın!';
-    case 'Silahşör': return 'Gündüzleri bir kez silahını ateşleyip birini vurma hakkın var.';
+    case 'Silahşör': return 'Geceleri silahını ateşleyip birini vurma hakkın var. Ancak dikkatli ol, masum birini vurursan sen de ölürsün!';
     default: return 'Geceleri hayatta kalmaya çalış, gündüzleri vampirleri bulup as!';
   }
 };
