@@ -149,7 +149,7 @@ async function runTests() {
   }));
   await supabase.from('votes').insert(votes);
   
-  await supabase.rpc('process_voting', { p_room_id: room.id });
+  await supabase.rpc('process_voting', { p_room_id: room.id });node bot_runner.mjs B3JXJH
   
   const { data: jesterRoom } = await supabase.from('rooms').select('*').eq('id', room.id).single();
   if (jesterRoom.phase !== 'endgame' || jesterRoom.winner !== 'Jester') {

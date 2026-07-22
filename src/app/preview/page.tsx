@@ -5,13 +5,13 @@ import { DayPhase } from '@/components/DayPhase';
 import { VotingPhase } from '@/components/VotingPhase';
 import { EndGame } from '@/components/EndGame';
 
-const MOCK_ME = { id: '1', nickname: 'Oyuncu (Sen)', is_alive: true, room_id: 'test', role: 'Vampir', is_host: true, joined_at: new Date().toISOString() };
+const MOCK_ME = { id: '1', nickname: 'Oyuncu (Sen)', avatar_id: 'vk1', is_alive: true, room_id: 'test', role: 'Vampir', is_host: true, joined_at: new Date().toISOString() };
 const MOCK_PLAYERS = [
   MOCK_ME,
-  { id: '2', nickname: 'Ahmet', is_alive: true, room_id: 'test', role: 'Köylü', is_host: false, joined_at: new Date().toISOString() },
-  { id: '3', nickname: 'Mehmet', is_alive: true, room_id: 'test', role: 'Doktor', is_host: false, joined_at: new Date().toISOString() },
-  { id: '4', nickname: 'Ayşe', is_alive: true, room_id: 'test', role: 'Köylü', is_host: false, joined_at: new Date().toISOString() },
-  { id: '5', nickname: 'Fatma', is_alive: true, room_id: 'test', role: 'Silahşör', is_host: false, joined_at: new Date().toISOString() },
+  { id: '2', nickname: 'Ahmet', avatar_id: 'vk2', is_alive: true, room_id: 'test', role: 'Köylü', is_host: false, joined_at: new Date().toISOString() },
+  { id: '3', nickname: 'Mehmet', avatar_id: 'vk3', is_alive: true, room_id: 'test', role: 'Doktor', is_host: false, joined_at: new Date().toISOString() },
+  { id: '4', nickname: 'Ayşe', avatar_id: 'vk4', is_alive: true, room_id: 'test', role: 'Köylü', is_host: false, joined_at: new Date().toISOString() },
+  { id: '5', nickname: 'Fatma', avatar_id: 'vk5', is_alive: true, room_id: 'test', role: 'Silahşör', is_host: false, joined_at: new Date().toISOString() },
 ];
 
 import { notFound } from 'next/navigation';
@@ -65,6 +65,7 @@ export default function PreviewPage() {
             room={{ id: 'test', phase: 'day', last_killed_nicknames: ['Ayşe (Köylü)'] }} 
             me={MOCK_ME} 
             alivePlayers={MOCK_PLAYERS}
+            allPlayers={MOCK_PLAYERS}
           />
         )}
 
@@ -80,6 +81,7 @@ export default function PreviewPage() {
           <EndGame 
             room={{ id: 'test', phase: 'endgame', winner: 'Vampires', last_killed_nicknames: ['Mehmet'] }} 
             me={MOCK_ME} 
+            allPlayers={MOCK_PLAYERS}
           />
         )}
       </div>

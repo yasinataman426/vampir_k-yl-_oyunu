@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/Button";
 import { supabase, Player, Room } from "@/lib/supabase";
 import { RoleSettingsPanel } from "@/components/RoleSettingsPanel";
 import { RoleCounts, getDefaultRoles, generateRoleDeck, validateRoles } from "@/lib/gameLogic";
+import { AvatarSelectionModal } from "@/components/AvatarSelectionModal";
+import { AVATARS } from "@/lib/constants";
 
 export default function LobbyPage({ params }: { params: Promise<{ roomCode: string }> }) {
   const resolvedParams = use(params);
@@ -14,7 +16,8 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
   
   const [room, setRoom] = useState<Room | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [localPlayerId, setLocalPlayerId] = useState<string | null>(null);
+  const currentPlayer = players.find(p => p.id === localPlayerId) || null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -22,8 +25,8 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
   const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     let playersSub: any;
-    let roomSub: any;
 
     const initLobby = async () => {
       try {
@@ -36,6 +39,9 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
 
         if (roomError || !roomData) throw new Error('Oda bulunamadı.');
         setRoom(roomData);
+
+        // Reset any previous game state for this room when in lobby
+        sessionStorage.removeItem(`revealed_${roomData.id}`);
 
         // If game is already active, redirect immediately
         if (roomData.is_active) {
@@ -54,11 +60,12 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
         setPlayers(playersData || []);
 
         // 3. Identify current player
-        const localPlayerId = localStorage.getItem('vampir_player_id');
-        if (localPlayerId) {
-          const me = playersData?.find(p => p.id === localPlayerId);
-          if (me) setCurrentPlayer(me);
+        const localId = localStorage.getItem('vampir_player_id');
+        if (localId) {
+          setLocalPlayerId(localId);
         }
+
+        if (!isMounted) return;
 
         // 4. Subscribe to Realtime (Players & Room)
         // We use a unique channel name to prevent React StrictMode from reusing an active channel
@@ -100,6 +107,7 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
     initLobby();
 
     return () => {
+      isMounted = false;
       if (playersSub) supabase.removeChannel(playersSub);
     };
   }, [roomCode, router]);
@@ -156,9 +164,23 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
   }
 
   const isHost = currentPlayer?.is_host ?? false;
+  const takenAvatars = players.map(p => p.avatar_id).filter(Boolean) as string[];
 
   return (
-    <main className="flex-1 flex flex-col p-4 md:p-6 max-w-5xl mx-auto w-full relative h-[100dvh] overflow-hidden">
+    <>
+      <div 
+        className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out"
+        style={{ backgroundImage: `url('/images/lobby_bg.png')` }}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"></div>
+      </div>
+
+      <main className="flex-1 flex flex-col p-4 md:p-6 max-w-5xl mx-auto w-full relative h-[100dvh] overflow-hidden z-10">
+      <AvatarSelectionModal 
+        isOpen={currentPlayer?.avatar_id === null} 
+        currentPlayerId={currentPlayer?.id || ''} 
+        takenAvatars={takenAvatars} 
+      />
       <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* Header */}
@@ -187,24 +209,30 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto pr-2 pb-2 custom-scrollbar">
-            {players.map((player) => (
-              <div key={player.id} className="glass-panel p-4 rounded-xl flex items-center gap-4 animate-in fade-in zoom-in-95 duration-500">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
-                  <span className="text-lg font-serif text-white">
-                    {player.nickname.charAt(0).toUpperCase()}
-                  </span>
+          <div className="grid grid-cols-3 sm:grid-cols-4 xl:grid-cols-5 gap-3 overflow-y-auto pr-2 pb-2 custom-scrollbar">
+            {players.map((player) => {
+              const playerAvatar = AVATARS.find(a => a.id === player.avatar_id);
+              return (
+              <div key={player.id} className="glass-panel p-3 rounded-xl flex flex-col items-center justify-center text-center gap-2 animate-in fade-in zoom-in-95 duration-500">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-white/10 flex items-center justify-center shadow-inner overflow-hidden bg-black shrink-0">
+                  {playerAvatar ? (
+                    <img src={playerAvatar.src} alt={playerAvatar.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl font-serif text-white">
+                      {player.nickname.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium truncate">
+                <div className="w-full min-w-0">
+                  <p className="text-white font-medium truncate text-sm">
                     {player.nickname} {player.id === currentPlayer?.id && "(Sen)"}
                   </p>
-                  <p className={`text-xs ${player.is_host ? 'text-secondary' : 'text-green-400'}`}>
+                  <p className={`text-[10px] sm:text-xs uppercase tracking-wider font-semibold mt-0.5 ${player.is_host ? 'text-secondary' : 'text-green-400'}`}>
                     {player.is_host ? 'Kurucu' : 'Hazır'}
                   </p>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </div>
 
@@ -245,5 +273,6 @@ export default function LobbyPage({ params }: { params: Promise<{ roomCode: stri
         )}
       </footer>
     </main>
+    </>
   );
 }

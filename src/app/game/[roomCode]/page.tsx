@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { supabase, Player, Room } from "@/lib/supabase";
+import { AVATARS } from "@/lib/constants";
 import { RoleRevealCard, Teammate } from "@/components/RoleRevealCard";
 import { NightPhase } from "@/components/NightPhase";
 import { DayPhase } from "@/components/DayPhase";
@@ -10,7 +11,7 @@ import { VotingPhase } from "@/components/VotingPhase";
 import { EndGame } from "@/components/EndGame";
 import { Button } from "@/components/ui/Button";
 
-type GameState = 'loading' | 'starting' | 'revealing' | 'playing';
+type GameState = 'loading' | 'starting' | 'revealing' | 'playing' | 'voting_result' | 'night_result';
 
 export default function GamePage({ params }: { params: Promise<{ roomCode: string }> }) {
   const resolvedParams = use(params);
@@ -20,7 +21,8 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
   const [gameState, setGameState] = useState<GameState>('loading');
   const [room, setRoom] = useState<Room | null>(null);
   const [me, setMe] = useState<Player | null>(null);
-  const [teammates, setTeammates] = useState<Teammate[]>([]);
+  const [teammates, setTeammates] = useState<any[]>([]);
+  const [initError, setInitError] = useState<string | null>(null);
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
 
   useEffect(() => {
@@ -65,39 +67,64 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
 
         // Subscribe to Room Phase Changes (Day/Night transitions)
         roomSub = supabase
-          .channel(`game_room_${roomData.id}`)
+          .channel(`game_room_${roomData.id}_${Date.now()}`)
           .on(
             'postgres_changes',
             { event: 'UPDATE', schema: 'public', table: 'rooms', filter: `id=eq.${roomData.id}` },
             (payload) => {
-              if (payload.new.phase !== roomData.phase) {
-                 // The phase changed. Let's just reload the whole page to get fresh state.
+              if (payload.new.is_active === false) {
+                 // Game was reset by host, send everyone back to lobby
+                 router.push(`/lobby/${roomCode}`);
+              } else if (payload.new.phase !== roomData.phase) {
+                 if (roomData.phase === 'voting' && payload.new.phase === 'night') {
+                   sessionStorage.setItem(`show_voting_result_${roomData.id}`, 'true');
+                 } else if (roomData.phase === 'night' && payload.new.phase === 'day') {
+                   sessionStorage.setItem(`show_night_result_${roomData.id}`, 'true');
+                 }
                  window.location.reload();
               }
             }
           )
           .subscribe();
 
-        // Check if we need to show reveal or skip straight to playing (if it's not the very first night)
-        // For simplicity, if we just loaded, we show reveal, but realistically we only show reveal on cycle 1.
-        // I will assume for now we always show reveal on load if it's phase = 'day' initially, 
-        // but since room is activated, phase defaults to 'day'. Wait, our RPC didn't change phase to night on start.
-        // Actually, if phase is already night, skip reveal and go to playing.
-        if (roomData.phase === 'night') {
+        const hasSeenReveal = sessionStorage.getItem(`revealed_${roomData.id}`);
+        const showNightResult = sessionStorage.getItem(`show_night_result_${roomData.id}`);
+        const showVotingResult = sessionStorage.getItem(`show_voting_result_${roomData.id}`);
+
+        if (showNightResult === 'true') {
+          sessionStorage.removeItem(`show_night_result_${roomData.id}`);
+          setGameState('night_result');
+          setTimeout(() => {
+            setGameState('starting');
+            setTimeout(() => {
+              setGameState('playing');
+            }, 1000);
+          }, 4000);
+        } else if (showVotingResult === 'true') {
+          sessionStorage.removeItem(`show_voting_result_${roomData.id}`);
+          setGameState('voting_result');
+          setTimeout(() => {
+            setGameState('starting');
+            setTimeout(() => {
+              setGameState('playing');
+            }, 1000);
+          }, 3000);
+        } else if (hasSeenReveal === 'true') {
+          setGameState('playing');
+        } else if (roomData.phase === 'night' || roomData.phase === 'voting' || roomData.phase === 'endgame') {
+          // If they join mid-game (e.g. refreshed page), skip reveal
           setGameState('playing');
         } else {
-          // It's technically day right after start, wait...
-          // If we want Night 1 to happen first, we should let the host change phase to night.
-          // For now, let's just do reveal -> playing.
+          // It's the very first day phase when the game starts
           setGameState('starting');
           setTimeout(() => {
             setGameState('revealing');
-          }, 3000);
+          }, 1500);
         }
 
-      } catch (err) {
+      } catch (err: any) {
         console.error(err);
-        router.push('/');
+        setInitError(err.message || 'Bilinmeyen bir hata oluştu');
       }
     };
 
@@ -134,31 +161,156 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
 
   if (gameState === 'loading') {
     return (
-      <main className="flex-1 flex items-center justify-center">
-        <div className="animate-pulse text-white text-xl font-serif">Oyun Yükleniyor...</div>
+      <>
+        <div className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out" style={{ backgroundImage: `url('/images/lobby_bg.png')` }}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
+        </div>
+        <main className="flex-1 flex items-center justify-center">
+          <div className="animate-pulse text-white text-xl font-serif">Oyun Yükleniyor...</div>
+        </main>
+      </>
+    );
+  }
+
+  if (initError) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center">
+        <div className="glass-panel border-red-500/50 p-8 rounded-xl text-center max-w-lg w-full">
+          <h2 className="text-3xl font-serif text-red-500 mb-4">Hata Oluştu</h2>
+          <p className="text-gray-400 mb-6">{initError}</p>
+          <Button onClick={() => router.push('/')} variant="secondary">Ana Sayfaya Dön</Button>
+        </div>
       </main>
     );
   }
 
-  // Pure black overlay with cinematic text for the transition
-  if (gameState === 'starting') {
+  if (!me || !room) return null;
+
+  if (gameState === 'night_result') {
+    const killedNames = room?.last_killed_nicknames || [];
+    const killedPlayers = allPlayers.filter(p => killedNames.includes(p.nickname));
+
     return (
-      <main className="flex-1 flex flex-col items-center justify-center relative overflow-hidden bg-black/80">
-        <div className="z-10 text-center animate-in fade-in zoom-in duration-1000 fill-mode-forwards">
-          <h1 className="text-5xl md:text-7xl font-serif text-white tracking-widest mb-4 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
-            {room?.phase === 'night' ? 'GECE ÇÖKTÜ' : 'GÜNEŞ BATIYOR'}
-          </h1>
-          <p className="text-xl text-secondary tracking-widest animate-pulse">Kasaba uykuya dalıyor...</p>
+      <>
+        <div className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out" style={{ backgroundImage: `url('/images/day_bg.png')` }}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
+        </div>
+        <main className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="z-10 text-center animate-in fade-in zoom-in duration-1000 w-full max-w-4xl px-4">
+            <h1 className="text-4xl md:text-6xl font-serif text-white tracking-widest mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+              GECENİN ÖZETİ
+            </h1>
+          {killedNames.length > 0 ? (
+            <div className="glass-panel p-6 md:p-8 rounded-2xl border-red-900/50 shadow-[0_0_50px_rgba(139,0,0,0.5)] flex flex-col items-center">
+              <p className="text-lg md:text-xl text-gray-300 mb-4 md:mb-6 uppercase tracking-widest">Bu Gece Ölenler:</p>
+              <div className="flex flex-wrap gap-8 justify-center">
+                {killedPlayers.map(p => {
+                  const avatar = AVATARS.find(a => a.id === p.avatar_id);
+                  return (
+                    <div key={p.id} className="flex flex-col items-center animate-in zoom-in duration-700">
+                      {avatar && (
+                        <div className="w-24 h-24 mb-4 rounded-full border-2 border-primary overflow-hidden shadow-[0_0_15px_rgba(139,0,0,0.6)]">
+                          <img src={avatar.src} alt={avatar.name} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <p className="text-3xl font-serif text-primary font-bold">{p.nickname}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="glass-panel p-6 md:p-10 rounded-2xl border-green-900/50 shadow-[0_0_50px_rgba(34,197,94,0.3)] flex flex-col items-center">
+              <p className="text-lg md:text-xl text-gray-300 mb-2 md:mb-4 uppercase tracking-widest">Sonuç:</p>
+              <p className="text-2xl md:text-3xl font-serif text-green-400 font-bold mb-2 md:mb-4">Doktor işini iyi yaptı!</p>
+              <p className="text-lg md:text-xl text-white">Bu gece kimse ölmedi.</p>
+            </div>
+          )}
         </div>
       </main>
+      </>
+    );
+  }
+
+  if (gameState === 'voting_result') {
+    const hungName = room?.last_hung_nickname;
+    const hungPlayer = allPlayers.find(p => p.nickname === hungName);
+    const hungAvatar = hungPlayer ? AVATARS.find(a => a.id === hungPlayer.avatar_id) : null;
+    
+    return (
+      <>
+        <div className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out" style={{ backgroundImage: `url('/images/voting_bg.png')` }}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
+        </div>
+        <main className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="z-10 text-center animate-in fade-in zoom-in duration-1000">
+            <h1 className="text-4xl md:text-6xl font-serif text-white tracking-widest mb-6 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+              KASABANIN KARARI
+            </h1>
+          {hungName ? (
+            <div className="glass-panel p-6 md:p-10 rounded-2xl border-red-900/50 shadow-[0_0_50px_rgba(139,0,0,0.5)] flex flex-col items-center">
+              <p className="text-lg md:text-xl text-gray-300 mb-4 uppercase tracking-widest">Asılan Kişi:</p>
+              {hungAvatar && (
+                <div className="w-24 h-24 mb-4 rounded-full border-2 border-primary overflow-hidden shadow-[0_0_15px_rgba(139,0,0,0.6)]">
+                  <img src={hungAvatar.src} alt={hungAvatar.name} className="w-full h-full object-cover" />
+                </div>
+              )}
+              <p className="text-5xl font-serif text-primary font-bold">{hungName}</p>
+            </div>
+          ) : (
+            <div className="glass-panel p-6 md:p-10 rounded-2xl border-white/20 shadow-[0_0_30px_rgba(255,255,255,0.1)] flex flex-col items-center">
+              <p className="text-lg md:text-xl text-gray-300 mb-4 uppercase tracking-widest">Oylama Sonucu:</p>
+              <p className="text-2xl md:text-3xl font-serif text-white font-bold">Kimse Asılmadı (Pas Geçildi)</p>
+            </div>
+          )}
+        </div>
+      </main>
+      </>
+    );
+  }
+
+  // Cinematic text for the transition
+  if (gameState === 'starting') {
+    return (
+      <>
+        <div className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out" style={{ backgroundImage: `url('/images/${room?.phase === 'night' ? 'night_bg.png' : 'day_bg.png'}')` }}>
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
+        </div>
+        <main className="flex-1 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="z-10 text-center animate-in fade-in zoom-in duration-1000 fill-mode-forwards">
+            <h1 className="text-5xl md:text-7xl font-serif text-white tracking-widest mb-4 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+              {room?.phase === 'night' ? 'GECE ÇÖKTÜ' : 'GÜNEŞ DOĞUYOR'}
+            </h1>
+            <p className="text-xl text-secondary tracking-widest animate-pulse">
+              {room?.phase === 'night' ? 'Kasaba uykuya dalıyor...' : 'Kasaba uyanıyor...'}
+            </p>
+          </div>
+        </main>
+      </>
     );
   }
 
   const alivePlayers = allPlayers.filter(p => p.is_alive);
 
   return (
-    <main className="flex-1 flex flex-col p-4 md:p-6 pb-24 max-w-5xl mx-auto w-full relative">
-      <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
+    <>
+      {/* Dynamic Background */}
+      <div 
+        className="fixed inset-0 -z-20 bg-[length:100%_100%] bg-no-repeat transition-all duration-1000 ease-in-out"
+        style={{
+          backgroundImage: `url('/images/${
+            room?.phase === 'night' ? 'night_bg.png' :
+            room?.phase === 'day' ? 'day_bg.png' :
+            room?.phase === 'voting' ? 'voting_bg.png' :
+            'lobby_bg.png'
+          }')`
+        }}
+      >
+        <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"></div>
+      </div>
+
+      <main className="flex-1 flex flex-col p-4 md:p-6 pb-24 max-w-5xl mx-auto w-full relative z-10">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* Header */}
       <header className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 gap-2">
@@ -184,7 +336,10 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
         <RoleRevealCard 
           role={me.role} 
           teammates={teammates}
-          onContinue={() => setGameState('playing')} 
+          onContinue={() => {
+            if(room) sessionStorage.setItem(`revealed_${room.id}`, 'true');
+            setGameState('playing');
+          }} 
         />
       )}
 
@@ -192,14 +347,7 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
         <div className="flex-1 flex flex-col animate-in fade-in duration-1000">
           
           {room?.phase === 'endgame' ? (
-            <EndGame room={room} me={me} />
-          ) : !me?.is_alive ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="glass-panel border-primary/50 p-8 rounded-xl text-center max-w-lg w-full">
-                <h2 className="text-3xl font-serif text-primary mb-4">Öldün</h2>
-                <p className="text-gray-400">Artık oyuna müdahale edemezsin. Geri kalanları izle.</p>
-              </div>
-            </div>
+            <EndGame room={room} me={me} allPlayers={allPlayers} />
           ) : room?.phase === 'night' ? (
             <NightPhase 
               room={room} 
@@ -209,37 +357,16 @@ export default function GamePage({ params }: { params: Promise<{ roomCode: strin
               alivePlayers={alivePlayers} 
             />
           ) : room?.phase === 'day' ? (
-            <DayPhase room={room} me={me} alivePlayers={alivePlayers} />
+            <DayPhase room={room} me={me} allPlayers={allPlayers} alivePlayers={alivePlayers} />
           ) : room?.phase === 'voting' ? (
             <VotingPhase room={room} me={me} alivePlayers={alivePlayers} />
           ) : null}
 
-          {/* Host Controls */}
-          {me?.is_host && room?.phase === 'night' && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-               <Button variant="primary" className="shadow-[0_0_30px_rgba(133,20,75,0.4)] px-8" onClick={handleEndNight}>
-                 Moderatör: Geceyi Bitir
-               </Button>
-            </div>
-          )}
 
-          {me?.is_host && room?.phase === 'voting' && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-               <Button variant="primary" className="shadow-[0_0_30px_rgba(133,20,75,0.4)] px-8" onClick={async () => {
-                 try {
-                   await supabase.rpc('process_voting', { p_room_id: room.id });
-                 } catch(e: any) {
-                   console.error(e);
-                   alert("Oylama hesaplanırken hata: " + e.message);
-                 }
-               }}>
-                 Moderatör: Oyları Say ve Bitir
-               </Button>
-            </div>
-          )}
 
         </div>
       )}
-    </main>
+      </main>
+    </>
   );
 }

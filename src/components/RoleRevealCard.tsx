@@ -27,12 +27,12 @@ export const RoleRevealCard: React.FC<RoleRevealCardProps> = ({ role, teammates,
   const isVampire = role === 'Vampir';
   
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in duration-1000 fill-mode-forwards">
-      <div className={`glass-panel p-8 md:p-12 rounded-2xl max-w-md w-full text-center border-t border-l ${
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in zoom-in duration-1000 fill-mode-forwards p-2">
+      <div className={`glass-panel p-6 md:p-12 rounded-2xl max-w-md w-full text-center border-t border-l ${
         isVampire ? 'border-primary/50 shadow-[0_0_50px_rgba(139,0,0,0.3)]' : 'border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.05)]'
       }`}>
-        <h2 className="text-gray-400 uppercase tracking-[0.3em] text-sm mb-4">Senin Rolün</h2>
-        <h1 className={`text-5xl font-serif mb-6 drop-shadow-md ${isVampire ? 'text-primary' : 'text-white'}`}>
+        <h2 className="text-gray-400 uppercase tracking-[0.3em] text-xs md:text-sm mb-2 md:mb-4">Senin Rolün</h2>
+        <h1 className={`text-4xl md:text-5xl font-serif mb-4 md:mb-6 drop-shadow-md ${isVampire ? 'text-primary' : 'text-white'}`}>
           {role}
         </h1>
         <p className="text-gray-300 mb-8 leading-relaxed">

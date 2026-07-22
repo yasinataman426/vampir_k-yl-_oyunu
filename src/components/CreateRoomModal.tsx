@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { supabase } from '@/lib/supabase';
-import { AVATARS } from '@/lib/constants';
 
 interface CreateRoomModalProps {
   isOpen: boolean;
@@ -16,7 +15,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
   const router = useRouter();
   const [nickname, setNickname] = useState('');
   const [discussionTime, setDiscussionTime] = useState('2');
-  const [selectedAvatar, setSelectedAvatar] = useState('aslan');
+  const [nightTime, setNightTime] = useState('30');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,6 +44,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
         .insert({
           room_code: roomCode,
           timer_setting: parseInt(discussionTime),
+          night_timer_setting: parseInt(nightTime),
           is_active: false,
           phase: 'day'
         })
@@ -59,7 +59,7 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
         .insert({
           room_id: roomData.id,
           nickname: nickname.trim(),
-          avatar_id: selectedAvatar,
+          avatar_id: null,
           is_host: true,
           is_alive: true
         })
@@ -101,31 +101,6 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
             disabled={isLoading}
           />
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Figürünüzü Seçin
-          </label>
-          <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-            {AVATARS.map((avatar) => (
-              <button
-                key={avatar.id}
-                type="button"
-                onClick={() => setSelectedAvatar(avatar.id)}
-                className={`shrink-0 w-12 h-12 rounded-full border-2 transition-all p-0.5 ${
-                  selectedAvatar === avatar.id
-                    ? 'border-primary scale-110 shadow-[0_0_10px_rgba(139,0,0,0.5)] bg-primary/20'
-                    : 'border-transparent hover:border-white/30 hover:bg-white/10'
-                }`}
-                title={avatar.name}
-              >
-                <div className="w-full h-full rounded-full bg-white/5 flex items-center justify-center text-2xl">
-                  {avatar.emoji}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -145,6 +120,29 @@ export const CreateRoomModal: React.FC<CreateRoomModalProps> = ({ isOpen, onClos
                 } disabled:opacity-50`}
               >
                 {time} Dk
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            Gece Süresi
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {['15', '30', '45'].map((time) => (
+              <button
+                key={time}
+                type="button"
+                onClick={() => setNightTime(time)}
+                disabled={isLoading}
+                className={`py-2 px-4 rounded-lg border text-sm font-medium transition-all ${
+                  nightTime === time 
+                    ? 'bg-primary text-white border-primary shadow-[0_0_10px_rgba(139,0,0,0.4)]' 
+                    : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/30'
+                } disabled:opacity-50`}
+              >
+                {time} Sn
               </button>
             ))}
           </div>

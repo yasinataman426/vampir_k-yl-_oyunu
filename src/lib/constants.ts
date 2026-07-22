@@ -1,22 +1,9 @@
-export const AVATARS = [
-  { id: 'aslan', name: 'Aslan', emoji: '🦁' },
-  { id: 'kaplan', name: 'Kaplan', emoji: '🐅' },
-  { id: 'fil', name: 'Fil', emoji: '🐘' },
-  { id: 'kedi', name: 'Kedi', emoji: '🐱' },
-  { id: 'kopek', name: 'Köpek', emoji: '🐶' },
-  { id: 'baykus', name: 'Baykuş', emoji: '🦉' },
-  { id: 'karga', name: 'Karga', emoji: '🐦‍⬛' },
-  { id: 'at', name: 'At', emoji: '🐴' },
-  { id: 'esek', name: 'Eşek', emoji: '🫏' },
-  { id: 'zurafa', name: 'Zürafa', emoji: '🦒' },
-  { id: 'tavsan', name: 'Tavşan', emoji: '🐰' },
-  { id: 'ahtapot', name: 'Ahtapot', emoji: '🐙' },
-  { id: 'yarasa', name: 'Yarasa', emoji: '🦇' },
-  { id: 'maymun', name: 'Maymun', emoji: '🐵' },
-  { id: 'tilki', name: 'Tilki', emoji: '🦊' },
-  { id: 'kurt', name: 'Kurt', emoji: '🐺' },
-  { id: 'panda', name: 'Panda', emoji: '🐼' },
-  { id: 'ejderha', name: 'Ejderha', emoji: '🐉' },
-  { id: 'dinazor', name: 'Dinazor', emoji: '🦖' },
-  { id: 'orumcek', name: 'Örümcek', emoji: '🕷️' },
+const characterNames = [
+  'adrian', 'astrid', 'aurora', 'cedric', 'conrad', 'damian', 'darius', 'edgar', 'gabriel', 'gregor', 'kuzgun', 'mireya', 'morgana', 'morwen', 'raphael', 'rowan', 'silas', 'tobias', 'tristan', 'valen', 'viktor', 'wilhelm'
 ];
+
+export const AVATARS = characterNames.map(name => ({
+  id: name,
+  name: name.charAt(0).toUpperCase() + name.slice(1),
+  src: `/assets/avatars/${name}.png`
+}));

@@ -9,7 +9,7 @@ export type Player = {
   id: string;
   room_id: string;
   nickname: string;
-  avatar_id: string;
+  avatar_id: string | null;
   role: string | null;
   is_alive: boolean;
   is_host: boolean;
@@ -23,4 +23,9 @@ export type Room = {
   is_active: boolean;
   phase: string;
   created_at: string;
+  last_hung_nickname?: string | null;
+  last_killed_nicknames?: string[] | null;
+  phase_ends_at?: string | null;
+  winner?: string | null;
+  night_timer_setting?: number;
 };
