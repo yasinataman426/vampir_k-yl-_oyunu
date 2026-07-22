@@ -19,8 +19,7 @@ export default function Home() {
           alt="Vampir Köylü Background"
           fill
           priority
-          className="w-full h-full opacity-50 animate-breath"
-          style={{ objectFit: 'fill' }}
+          className="w-full h-full opacity-50 animate-breath object-fill md:object-cover"
         />
       </div>
       
