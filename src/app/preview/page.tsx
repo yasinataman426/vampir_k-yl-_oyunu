@@ -62,7 +62,7 @@ export default function PreviewPage() {
         
         {phase === 'day' && (
           <DayPhase 
-            room={{ id: 'test', phase: 'day', last_killed_nicknames: ['Ayşe (Köylü)'] }} 
+            room={{ id: 'test', phase: 'day', last_killed_nicknames: ['Ayşe (Köylü)'] } as any} 
             me={MOCK_ME} 
             alivePlayers={MOCK_PLAYERS}
             allPlayers={MOCK_PLAYERS}
@@ -71,7 +71,7 @@ export default function PreviewPage() {
 
         {phase === 'voting' && (
           <VotingPhase 
-            room={{ id: 'test', phase: 'voting' }} 
+            room={{ id: 'test', phase: 'voting' } as any} 
             me={MOCK_ME} 
             alivePlayers={MOCK_PLAYERS} 
           />
@@ -79,7 +79,7 @@ export default function PreviewPage() {
 
         {phase === 'endgame' && (
           <EndGame 
-            room={{ id: 'test', phase: 'endgame', winner: 'Vampires', last_killed_nicknames: ['Mehmet'] }} 
+            room={{ id: 'test', phase: 'endgame', winner: 'Vampires', last_killed_nicknames: ['Mehmet'] } as any} 
             me={MOCK_ME} 
             allPlayers={MOCK_PLAYERS}
           />
