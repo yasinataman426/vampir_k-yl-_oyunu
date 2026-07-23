@@ -25,15 +25,15 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }
   if (!mounted || !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+        className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity"
         onClick={onClose}
       />
       
       {/* Modal Content */}
-      <div className="glass-panel relative w-full max-w-md rounded-xl p-8 shadow-2xl transform transition-all">
+      <div className="bg-zinc-900/95 border border-white/10 relative w-full max-w-md max-h-[90vh] overflow-y-auto custom-scrollbar rounded-xl p-6 md:p-8 shadow-2xl transform transition-all">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
